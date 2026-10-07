@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Commander Tournament Manager</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --side:#090d16; --text:#f8fafc; --muted:#94a3b8;
+    --blue:#2563eb; --green:#16a34a; --amber:#f59e0b; --red:#ef4444; --gold:#eab308; --slate:#334155;
+    --nav-h:60px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px}
+  body{padding:14px 14px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+  h1{font-size:20px;margin:4px 0 2px}
+  h2{font-size:18px;margin:0}
+  h3{font-size:15px;margin:0 0 8px}
+  .muted{color:var(--muted);font-size:14px}
+  .card{background:var(--card);border-radius:12px;padding:14px;margin:0 0 12px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row.wrap{flex-wrap:wrap}
+  .spread{justify-content:space-between}
+  .grow{flex:1}
+  button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 14px;min-height:44px;color:#fff;background:var(--slate);cursor:pointer}
+  button:active{filter:brightness(.85)}
+  button.primary{background:var(--blue)} button.success{background:var(--green)}
+  button.warn{background:#b45309} button.danger{background:#b91c1c} button.gold{background:var(--amber)}
+  button.small{min-height:36px;padding:8px 10px;font-size:14px}
+  button.block{width:100%}
+  input[type=text],textarea,select{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--bg);border:1px solid var(--slate);border-radius:10px;padding:11px}
+  textarea{min-height:170px;resize:vertical;font-family:ui-monospace,Consolas,monospace}
+  label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}
+  .opt{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:15px;line-height:1.3}
+  .opt input{margin-top:3px;width:18px;height:18px;flex:none}
+  .badge{background:var(--blue);color:#fff;font-size:12px;font-weight:700;border-radius:8px;padding:4px 8px;white-space:nowrap}
+  .mesa-title{color:var(--amber);font-weight:700;margin-bottom:8px}
+  .prow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:5px 0}
+  .prow .pname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .prow select{width:96px;flex:none}
+  .srow{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:8px}
+  .srow:nth-child(odd){background:var(--bg)}
+  .srow .rk{width:28px;color:var(--muted);font-weight:700}
+  .srow .rk.top{color:#3b82f6}
+  .srow .nm{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .srow .pt{color:var(--muted);font-size:13px;white-space:nowrap}
+  .srow.out .nm,.srow.out .pt,.srow.out .rk{color:#64748b;font-weight:500}
+  .section-label{color:var(--red);font-size:12px;font-weight:700;margin:14px 0 4px}
+  .sticky{position:sticky;bottom:calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));z-index:5;margin-top:4px}
+  .champ{color:var(--gold);font-weight:700;font-size:17px;margin:10px 0}
+  .tablewrap{overflow-x:auto;border-radius:10px}
+  table{border-collapse:collapse;width:100%;min-width:420px}
+  th{background:var(--bg);text-align:left;font-size:13px;padding:10px 8px}
+  td{padding:10px 8px;border-top:1px solid var(--slate);font-size:15px}
+  td.c,th.c{text-align:center}
+  tr.champion td{color:var(--gold);font-weight:700}
+  tr.podium td{font-weight:700}
+  tr.out td{color:#64748b}
+  .hitem{display:flex;gap:10px;align-items:center}
+  .hitem .info{flex:1;min-width:0}
+  .hitem .info b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pgrid .card{margin:0}
+  nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--side);display:flex;z-index:10;border-top:1px solid var(--slate)}
+  nav button{flex:1;background:transparent;border-radius:0;color:#cbd5e1;font-size:12px;display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;padding:6px 0}
+  nav button span{font-size:20px;line-height:1}
+  nav button.active{color:#fff;background:#1e3a8a}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+  .sheet{background:var(--card);width:100%;max-width:720px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 76px);background:#0b1220;border:1px solid var(--slate);color:#fff;padding:10px 16px;border-radius:10px;z-index:60;font-size:14px;max-width:90%;text-align:center}
+  .banner{background:#7c2d12;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+  .brand{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+  .brand .t{color:var(--gold);font-weight:800;font-size:18px}
+  .brand .s{color:#64748b;font-size:10px;font-weight:700;letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div class="brand"><span class="t">🏆 Commander</span><span class="s">TOURNAMENT MANAGER</span></div>
+<div id="app"></div>
+<nav id="nav"></nav>
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+<script>
+// ==== LOGIC START ==========================================================
+const POINTS = { W: 3, T: 1, L: 0 };
+const STANDING_POINTS = {
+  5: { 1: 4, 2: 3, 3: 2, 4: 1, 5: 0 },
+  4: { 1: 4, 2: 3, 3: 2, 4: 1 },
+  3: { 1: 4, 2: 2.5, 3: 1 }
+};
+const MIN_START_PLAYERS = 4;
+const MIN_ACTIVE_PLAYERS = 3;
+
+function playerPoints(mode, result, tableSize) {
+  if (mode === 'standing') {
+    const t = STANDING_POINTS[tableSize] || STANDING_POINTS[4];
+    return t[parseInt(result, 10)] || 0;
+  }
+  return POINTS[result] || 0;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function* combos(arr, k, start = 0, cur = []) {
+  if (cur.length === k) { yield [...cur]; return; }
+  for (let i = start; i <= arr.length - (k - cur.length); i++) {
+    cur.push(arr[i]);
+    yield* combos(arr, k, i + 1, cur);
+    cur.pop();
+  }
+}
+
+function tableCost(table, playedWith) {
+  let cost = 0;
+  for (const [a, b] of combos(table, 2)) {
+    if ((playedWith[a] || []).includes(b)) cost++;
+  }
+  return cost;
+}
+
+function calcSos(player, points, playedWith) {
+  return (playedWith[player] || []).reduce((s, o) => s + (points[o] || 0), 0);
+}
+
+function orderedPlayers(players, points, playedWith) {
+  const sos = {};
+  players.forEach(p => { sos[p] = calcSos(p, points, playedWith); });
+  return [...players].sort((a, b) => ((points[b] || 0) - (points[a] || 0)) || (sos[b] - sos[a]));
+}
+
+function tableDistribution(n) {
+  if (n < 3) return null;
+  for (let m4 = Math.floor(n / 4); m4 >= 0; m4--) {
+    const rem = n - m4 * 4;
+    if (rem % 3 === 0) return { m5: 0, m4, m3: rem / 3 };
+  }
+  return { m5: 1, m4: 0, m3: 0 }; // solo ocurre con 5 jugadores
+}
+
+function generateRound(ordered, playedWith) {
+  const dist = tableDistribution(ordered.length);
+  if (!dist) throw new Error('Se necesitan al menos 3 jugadores para armar mesas.');
+  const remaining = [...ordered];
+  const tables = [];
+  function bestTable(size) {
+    const pool = remaining.slice(0, Math.min(size * 3, remaining.length));
+    let best = null, bestCost = Infinity;
+    for (const c of combos(pool, size)) {
+      const cost = tableCost(c, playedWith);
+      if (cost < bestCost) { bestCost = cost; best = c; if (cost === 0) break; }
+    }
+    return best;
+  }
+  for (const [size, count] of [[5, dist.m5], [4, dist.m4], [3, dist.m3]]) {
+    for (let i = 0; i < count; i++) {
+      const t = bestTable(size);
+      tables.push(t);
+      t.forEach(p => remaining.splice(remaining.indexOf(p), 1));
+    }
+  }
+  return tables.map(t => ({ players: t, results: {} }));
+}
+
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const isDropped = (g, p) => has(g.dropped || {}, p);
+const activePlayers = g => g.players.filter(p => !isDropped(g, p));
+
+function dropPlayer(g, player) {
+  if (!g.dropped) g.dropped = {};
+  const active = activePlayers(g);
+  if (!active.includes(player)) return { ok: false, msg: 'Ese jugador ya no está activo en el torneo.', rebuilt: false };
+  if (active.length - 1 < MIN_ACTIVE_PLAYERS) {
+    return { ok: false, rebuilt: false,
+      msg: `No se puede retirar: deben quedar al menos ${MIN_ACTIVE_PLAYERS} jugadores activos. Si querés terminar, finalizá o abandoná el torneo.` };
+  }
+  const swissInProgress = g.round <= g.maxRounds && !g.inFinals;
+  let newTables = null;
+  if (swissInProgress) {
+    const rest = active.filter(p => p !== player);
+    newTables = generateRound(orderedPlayers(rest, g.points, g.playedWith), g.playedWith);
+  }
+  g.dropped[player] = g.round;
+  if (newTables) g.history[g.history.length - 1].tables = newTables;
+  return { ok: true, msg: `${player} fue retirado del torneo.`, rebuilt: swissInProgress };
+}
+
+function buildFinalStandings(g, campeon) {
+  const dropped = g.dropped || {};
+  const active = orderedPlayers(activePlayers(g), g.points, g.playedWith);
+  const out = orderedPlayers(g.players.filter(p => has(dropped, p)), g.points, g.playedWith);
+  const ci = active.indexOf(campeon);
+  if (ci > 0) { active.splice(ci, 1); active.unshift(campeon); }
+  return [...active, ...out].map((p, i) => ({
+    pos: i + 1, player: p, points: g.points[p] || 0,
+    sos: calcSos(p, g.points, g.playedWith),
+    retirado: has(dropped, p) ? dropped[p] : null
+  }));
+}
+
+// Valida los resultados de una mesa. Devuelve un mensaje de error o null.
+function validateTable(mode, results, tableNumber) {
+  const vals = Object.values(results);
+  if (mode === 'standing') {
+    if (new Set(vals).size !== vals.length) return `La Mesa ${tableNumber} tiene posiciones duplicadas.`;
+    return null;
+  }
+  const wins = vals.filter(v => v === 'W').length;
+  const draws = vals.filter(v => v === 'T').length;
+  if (wins > 1) return `La Mesa ${tableNumber} no puede tener más de 1 ganador.`;
+  if (wins === 1 && draws > 0) return `La Mesa ${tableNumber} tiene un ganador, no puede haber empates.`;
+  if (wins === 0 && draws < 2) return `La Mesa ${tableNumber} debe tener 1 ganador o al menos 2 jugadores empatados.`;
+  return null;
+}
+
+// Aplica los resultados ya validados y deja armada la ronda siguiente.
+function applyRound(g, newTables) {
+  for (const t of newTables) {
+    for (const [p, res] of Object.entries(t.results)) {
+      g.points[p] += playerPoints(g.scoringMode, res, t.players.length);
+    }
+    for (const [a, b] of combos(t.players, 2)) {
+      if (!g.playedWith[a].includes(b)) g.playedWith[a].push(b);
+      if (!g.playedWith[b].includes(a)) g.playedWith[b].push(a);
+    }
+  }
+  g.history[g.history.length - 1].tables = newTables;
+  if (g.round < g.maxRounds) {
+    g.round += 1;
+    const ord = orderedPlayers(activePlayers(g), g.points, g.playedWith);
+    g.history.push({ round: g.round, tables: generateRound(ord, g.playedWith) });
+  } else {
+    g.round += 1; // pasa a "Suizas finalizadas"
+  }
+}
+
+function newGame(nombre, players, maxRounds, withTop4, scoringMode) {
+  const randomized = shuffle(players);
+  const playedWith = {}, points = {};
+  randomized.forEach(p => { playedWith[p] = []; points[p] = 0; });
+  return {
+    nombre, players: randomized, maxRounds, withTop4, scoringMode,
+    fecha_inicio: localISO(), points, playedWith, dropped: {}, round: 1,
+    history: [{ round: 1, tables: generateRound(randomized, playedWith) }],
+    inFinals: false, campeon: null
+  };
+}
+
+function localISO() {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
+}
+// ==== LOGIC END ============================================================
+
+// ---------------------------------------------------------------------------
+// Almacenamiento (localStorage con respaldo en memoria)
+// ---------------------------------------------------------------------------
+const KEY_HIST = 'cmdr_tournaments', KEY_ACTIVE = 'cmdr_active';
+const store = {
+  ok: true, mem: {},
+  get(k) { try { return localStorage.getItem(k); } catch (e) { this.ok = false; return has(this.mem, k) ? this.mem[k] : null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { this.ok = false; this.mem[k] = v; } },
+  remove(k) { try { localStorage.removeItem(k); } catch (e) { this.ok = false; delete this.mem[k]; } }
+};
+try { localStorage.setItem('cmdr_test', '1'); localStorage.removeItem('cmdr_test'); } catch (e) { store.ok = false; }
+
+function loadJSON(key) { try { return JSON.parse(store.get(key)); } catch (e) { return null; } }
+
+function validGame(g) {
+  return g && typeof g === 'object' && Array.isArray(g.players) && g.points && g.playedWith &&
+    Array.isArray(g.history) && g.history.length && typeof g.round === 'number' && typeof g.maxRounds === 'number';
+}
+
+const state = {
+  tournaments: [], current: null, view: 'new', viewing: null, fromHistory: false,
+  draft: { nombre: '', players: '', mode: 'wtl', rounds: 3, top4: true }
+};
+{
+  const h = loadJSON(KEY_HIST);
+  state.tournaments = Array.isArray(h) ? h : [];
+  const a = loadJSON(KEY_ACTIVE);
+  if (validGame(a)) { a.dropped = a.dropped || {}; state.current = a; state.view = 'game'; }
+}
+state.draft.nombre = 'Commander Clash ' + new Date().toLocaleDateString('es-AR');
+
+const saveHistory = () => store.set(KEY_HIST, JSON.stringify(state.tournaments));
+const persistActive = () => state.current ? store.set(KEY_ACTIVE, JSON.stringify(state.current)) : store.remove(KEY_ACTIVE);
+
+// ---------------------------------------------------------------------------
+// Utilidades de interfaz
+// ---------------------------------------------------------------------------
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const fmt = n => String(Math.round(n * 100) / 100);
+
+function toast(msg) {
+  const old = $('#toast'); if (old) old.remove();
+  const t = document.createElement('div'); t.id = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3200);
+}
+function openSheet(html) {
+  closeSheet();
+  const o = document.createElement('div'); o.id = 'overlay';
+  o.innerHTML = `<div class="sheet">${html}</div>`;
+  o.addEventListener('click', e => { if (e.target === o) closeSheet(); });
+  document.body.appendChild(o);
+}
+function closeSheet() { const o = $('#overlay'); if (o) o.remove(); }
+
+function download(filename, text) {
+  const blob = new Blob([text], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ---------------------------------------------------------------------------
+// Vistas
+// ---------------------------------------------------------------------------
+function viewNew() {
+  const d = state.draft;
+  return `
+  <h1>Crear nuevo torneo</h1>
+  <div class="muted" style="margin-bottom:12px">Configurá los participantes y la modalidad.</div>
+  <div class="card">
+    <label style="margin-top:0">Nombre del torneo</label>
+    <input type="text" id="f-nombre" data-draft="nombre" value="${esc(d.nombre)}">
+
+    <label>Modo de puntuación</label>
+    <div class="opt"><input type="radio" name="mode" value="wtl" data-draft="mode" ${d.mode === 'wtl' ? 'checked' : ''}>
+      <div>Victoria / Empate / Derrota (3 / 1 / 0 pts)</div></div>
+    <div class="opt"><input type="radio" name="mode" value="standing" data-draft="mode" ${d.mode === 'standing' ? 'checked' : ''}>
+      <div>Posición en mesa<br><span class="muted">4 jugadores: 4/3/2/1 · 3 jugadores: 4/2.5/1 · 5 jugadores: 4/3/2/1/0</span></div></div>
+
+    <div class="row spread" style="margin-top:12px"><label style="margin:0">Jugadores (uno por línea)</label>
+      <button class="small primary" data-act="shuffle">🔀 Mezclar</button></div>
+    <textarea id="f-players" data-draft="players" style="margin-top:6px" placeholder="Ana&#10;Beto&#10;Carla&#10;Diego">${esc(d.players)}</textarea>
+
+    <label>Rondas suizas</label>
+    <div class="row wrap">
+      ${[3, 4, 5].map(r => `<label class="opt" style="margin:0;font-weight:500"><input type="radio" name="rounds" value="${r}" data-draft="rounds" ${d.rounds === r ? 'checked' : ''}> ${r} rondas</label>`).join('')}
+    </div>
+    <div class="opt" style="margin-top:6px"><input type="checkbox" id="f-top4" data-draft="top4" ${d.top4 ? 'checked' : ''}>
+      <div style="color:var(--amber);font-weight:700">Jugar final Top 4 (mesa final)</div></div>
+  </div>
+  <button class="success block" data-act="start" style="min-height:52px;font-size:17px">🚀 Iniciar torneo</button>`;
+}
+
+function standingsHTML(g, ord, dropped) {
+  let h = `<div class="card"><h3 style="color:var(--gold)">🏆 Tabla en vivo</h3>`;
+  ord.forEach((p, i) => {
+    h += `<div class="srow"><span class="rk ${i < 4 ? 'top' : ''}">${i + 1}.</span><span class="nm">${esc(p)}</span>
+      <span class="pt">${fmt(g.points[p])} pts (SoS ${fmt(calcSos(p, g.points, g.playedWith))})</span></div>`;
+  });
+  if (dropped.length) {
+    h += `<div class="section-label">RETIRADOS</div>`;
+    dropped.forEach(p => {
+      const r = g.dropped[p];
+      const when = r <= g.maxRounds ? `Ronda ${r}` : 'tras las Suizas';
+      h += `<div class="srow out"><span class="rk"></span><span class="nm">${esc(p)}</span><span class="pt">${fmt(g.points[p])} pts · ${when}</span></div>`;
+    });
+  }
+  return h + `</div>`;
+}
+
+function tablesHTML(g) {
+  const tables = g.history[g.history.length - 1].tables;
+  let h = '';
+  tables.forEach((t, ti) => {
+    h += `<div class="card"><div class="mesa-title">Mesa ${ti + 1} (${t.players.length} jugadores)</div>`;
+    t.players.forEach((p, pi) => {
+      const opts = g.scoringMode === 'standing'
+        ? t.players.map((_, k) => `<option value="${k + 1}">${k + 1}º</option>`).join('')
+        : ['W', 'T', 'L'].map(v => `<option value="${v}">${v}</option>`).join('');
+      h += `<div class="prow"><span class="pname">${esc(p)}</span>
+        <select data-t="${ti}" data-i="${pi}"><option value="">—</option>${opts}</select></div>`;
+    });
+    h += `</div>`;
+  });
+  h += `<div class="sticky"><button class="primary block" data-act="submit" style="min-height:52px;font-size:17px;box-shadow:0 4px 14px rgba(0,0,0,.5)">💾 Guardar ronda</button></div>`;
+  return h;
+}
+
+function swissFinishedHTML(g, ord) {
+  let h = `<div class="card"><h2 style="margin-bottom:12px">Rondas suizas finalizadas</h2>`;
+  if (g.withTop4) {
+    if (ord.length >= 4) h += `<button class="gold block" data-act="top4" style="margin-bottom:10px">🏆 Jugar Top 4 (mesa final)</button>`;
+    else h += `<div class="muted" style="margin-bottom:10px">No hay suficientes jugadores activos para la mesa final (se necesitan 4).</div>`;
+  }
+  h += `<button class="success block" data-act="finalize">✅ Finalizar torneo (ganador #1 de la tabla)</button></div>`;
+  return h;
+}
+
+function finalsHTML(top) {
+  let h = `<div class="card"><h2 style="color:var(--gold)">🏆 Mesa final – Top 4</h2>
+    <div class="muted" style="margin:6px 0 12px">Seleccioná al campeón del torneo:</div>`;
+  top.forEach((p, i) => {
+    h += `<button class="block" data-act="champion" data-name="${esc(p)}" style="margin-bottom:8px;background:var(--bg);border:1px solid var(--slate)">👑 Sembrado #${i + 1}: ${esc(p)}</button>`;
+  });
+  return h + `<button class="small" data-act="back-standings" style="margin-top:6px">← Volver a la tabla</button></div>`;
+}
+
+function viewGame() {
+  const g = state.current;
+  if (!g) return viewNew();
+  const active = activePlayers(g);
+  const ord = orderedPlayers(active, g.points, g.playedWith);
+  const dropped = orderedPlayers(g.players.filter(p => isDropped(g, p)), g.points, g.playedWith);
+  const inSwiss = g.round <= g.maxRounds;
+  const sub = inSwiss ? `Ronda ${g.round} de ${g.maxRounds}` : 'Suizas finalizadas';
+
+  let h = `<div class="card"><div class="row spread"><div style="min-width:0"><h2 style="overflow:hidden;text-overflow:ellipsis">${esc(g.nombre)}</h2>
+      <div class="muted">${sub} · ${active.length} jugadores activos</div></div>
+      <span class="badge">${g.scoringMode === 'standing' ? 'Posición' : 'W / T / L'}</span></div>
+    <div class="row" style="margin-top:12px">
+      <button class="warn small grow" data-act="drop">🚪 Retirar jugador</button>
+      <button class="danger small" data-act="abandon">✖ Abandonar</button></div></div>`;
+
+  if (g.inFinals) h += finalsHTML(ord.slice(0, 4));
+  else if (inSwiss) h += tablesHTML(g);
+  else h += swissFinishedHTML(g, ord);
+  return h + standingsHTML(g, ord, dropped);
+}
+
+function resultsRows(t) { return t.posiciones && t.posiciones.length ? t.posiciones : buildFinalStandings(t, t.campeon); }
+
+function viewResults() {
+  const t = state.viewing;
+  if (!t) return viewHistory();
+  const rows = resultsRows(t);
+  const fecha = (t.fecha_fin || t.fecha_inicio || '').slice(0, 10);
+  let h = `<h1>🏁 ${esc(t.nombre || 'Torneo')}</h1>
+    <div class="muted">Posiciones finales · ${(t.players || []).length} jugadores · ${esc(fecha)}</div>
+    <div class="champ">👑 Campeón: ${esc(t.campeon || 'N/A')}</div>
+    <div class="card tablewrap" style="padding:0"><table><thead><tr>
+      <th class="c">#</th><th>Jugador</th><th class="c">Puntos</th><th class="c">SoS</th><th>Estado</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    let cls = '', estado = '';
+    if (r.retirado !== null && r.retirado !== undefined) {
+      cls = 'out'; estado = r.retirado <= (t.maxRounds || r.retirado) ? `Retirado (Ronda ${r.retirado})` : 'Retirado (tras las Suizas)';
+    } else if (r.player === t.campeon) { cls = 'champion'; estado = '👑 Campeón'; }
+    else if (r.pos <= 3) cls = 'podium';
+    h += `<tr class="${cls}"><td class="c">${r.pos}</td><td>${esc(r.player)}</td><td class="c">${fmt(r.points)}</td><td class="c">${fmt(r.sos)}</td><td>${estado}</td></tr>`;
+  });
+  h += `</tbody></table></div><div class="row wrap" style="margin-top:12px">
+    <button class="primary" data-act="copy">📋 Copiar tabla</button>`;
+  h += state.fromHistory
+    ? `<button data-act="to-history">← Volver al historial</button>`
+    : `<button data-act="to-history">📜 Ir al historial</button><button class="success" data-act="to-new">🚀 Nuevo torneo</button>`;
+  return h + `</div>`;
+}
+
+function viewHistory() {
+  let h = `<h1>Historial de torneos</h1><div style="height:10px"></div>`;
+  if (!state.tournaments.length) return h + `<div class="card muted" style="text-align:center;padding:30px">Aún no hay torneos en el historial.</div>`;
+  state.tournaments.forEach((t, i) => {
+    h += `<div class="card hitem"><div class="info"><b>${esc(t.nombre || 'Torneo')}</b>
+      <span class="muted">${esc((t.fecha_inicio || '').slice(0, 10))} · ${(t.players || []).length} jugadores · 👑 ${esc(t.campeon || 'N/A')}</span></div>
+      <button class="primary small" data-act="view-results" data-i="${i}">📊</button>
+      <button class="danger small" data-act="del-history" data-i="${i}">🗑️</button></div>`;
+  });
+  return h;
+}
+
+function viewPlayers() {
+  const stats = {};
+  state.tournaments.forEach(t => (t.players || []).forEach(p => {
+    if (!has(stats, p)) stats[p] = { veces: 0, victorias: 0 };
+    stats[p].veces++;
+    if (t.campeon === p) stats[p].victorias++;
+  }));
+  const list = Object.entries(stats).sort((a, b) => b[1].veces - a[1].veces);
+  let h = `<h1>Registro de jugadores</h1><div style="height:10px"></div>`;
+  if (!list.length) return h + `<div class="card muted" style="text-align:center;padding:30px">No hay registros de jugadores.</div>`;
+  h += `<div class="pgrid">`;
+  list.forEach(([p, s]) => {
+    h += `<div class="card"><b>${esc(p)}</b><div class="muted">Torneos jugados: ${s.veces}</div>
+      ${s.victorias ? `<div style="color:var(--gold);font-weight:700;font-size:13px">👑 Torneos ganados: ${s.victorias}</div>` : ''}</div>`;
+  });
+  return h + `</div>`;
+}
+
+function viewData() {
+  return `<h1>Datos</h1><div style="height:10px"></div>
+  ${store.ok ? '' : `<div class="banner">⚠️ Este navegador no permite guardar datos al abrir el archivo. Usá "Respaldo completo" para no perder el torneo, o abrí el archivo desde Chrome.</div>`}
+  <div class="card"><h3>Exportar</h3>
+    <div class="muted" style="margin-bottom:10px">"Solo historial" genera el mismo formato que la versión de PC (commander_tournaments.json).</div>
+    <div class="row wrap"><button class="primary" data-act="export-hist">📤 Solo historial</button>
+    <button class="primary" data-act="export-all">💾 Respaldo completo</button></div></div>
+  <div class="card"><h3>Importar</h3>
+    <div class="muted" style="margin-bottom:10px">Podés cargar el historial de la versión de PC o un respaldo completo. Los torneos nuevos se suman a los existentes sin duplicar.</div>
+    <button class="success" data-act="import">📥 Importar archivo .json</button></div>`;
+}
+
+function render() {
+  const views = { new: viewNew, game: viewGame, history: viewHistory, players: viewPlayers, data: viewData, results: viewResults };
+  $('#app').innerHTML = (views[state.view] || viewNew)();
+  const tab = state.view === 'results' ? 'history' : (state.view === 'new' ? 'game' : state.view);
+  const items = [
+    ['game', state.current ? '⚔️' : '▶', state.current ? 'Torneo' : 'Nuevo'],
+    ['history', '📜', 'Historial'], ['players', '👥', 'Jugadores'], ['data', '💾', 'Datos']
+  ];
+  $('#nav').innerHTML = items.map(([k, ic, lb]) => `<button data-nav="${k}" class="${tab === k ? 'active' : ''}"><span>${ic}</span>${lb}</button>`).join('');
+  window.scrollTo(0, 0);
+}
+function go(view) { state.view = view; render(); }
+
+// ---------------------------------------------------------------------------
+// Acciones
+// ---------------------------------------------------------------------------
+function readPlayersInput() {
+  return $('#f-players').value.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+function startTournament() {
+  const nombre = $('#f-nombre').value.trim();
+  const players = readPlayersInput();
+  if (!nombre) return alert('Por favor ingresá un nombre para el torneo.');
+  if (players.length < MIN_START_PLAYERS) return alert(`Se necesitan al menos ${MIN_START_PLAYERS} jugadores para iniciar.`);
+  if (new Set(players.map(p => p.toLowerCase())).size !== players.length) return alert('Hay nombres de jugadores duplicados.');
+  if (players.some(p => p === '__proto__')) return alert('Ese nombre de jugador no es válido.');
+  state.current = newGame(nombre, players, state.draft.rounds, state.draft.top4, state.draft.mode);
+  persistActive();
+  go('game');
+}
+
+function submitRound() {
+  const g = state.current;
+  const tables = g.history[g.history.length - 1].tables;
+  const newTables = [];
+  for (let ti = 0; ti < tables.length; ti++) {
+    const results = {};
+    for (let pi = 0; pi < tables[ti].players.length; pi++) {
+      const p = tables[ti].players[pi];
+      const sel = document.querySelector(`select[data-t="${ti}"][data-i="${pi}"]`);
+      if (!sel || !sel.value) return alert(`Falta seleccionar resultado para ${p} en Mesa ${ti + 1}.`);
+      results[p] = sel.value;
+    }
+    const err = validateTable(g.scoringMode, results, ti + 1);
+    if (err) return alert(err);
+    newTables.push({ players: tables[ti].players, results });
+  }
+  applyRound(g, newTables);
+  persistActive();
+  go('game');
+}
+
+function openDrop() {
+  const g = state.current; if (!g) return;
+  const active = activePlayers(g);
+  if (active.length - 1 < MIN_ACTIVE_PLAYERS) return alert(`Deben quedar al menos ${MIN_ACTIVE_PLAYERS} jugadores activos.`);
+  const opts = [...active].sort((a, b) => a.localeCompare(b)).map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  openSheet(`<h3 style="font-size:17px">🚪 Retirar jugador del torneo</h3>
+    <div class="muted" style="margin-bottom:12px">Se rearmarán las mesas de la ronda actual sin este jugador. Los resultados que ya hayas elegido en pantalla se reinician. Si el jugador ya jugó esta ronda, guardá primero los resultados y retiralo después.</div>
+    <select id="dropSel"><option value="">Seleccioná un jugador…</option>${opts}</select>
+    <div class="row" style="margin-top:14px"><button class="grow" data-act="close-sheet">Cancelar</button>
+    <button class="warn grow" data-act="drop-confirm">Retirar</button></div>`);
+}
+
+function confirmDrop() {
+  const g = state.current;
+  const player = $('#dropSel').value;
+  if (!player) return alert('Seleccioná un jugador.');
+  if (!confirm(`¿Retirar a ${player} del torneo?`)) return;
+  const r = dropPlayer(g, player);
+  if (!r.ok) return alert(r.msg);
+  persistActive(); closeSheet(); render();
+  toast(r.rebuilt ? `${r.msg} Mesas de la ronda ${g.round} rearmadas.` : r.msg);
+}
+
+function finish(campeon) {
+  const g = state.current;
+  g.campeon = campeon;
+  g.fecha_fin = localISO();
+  g.posiciones = buildFinalStandings(g, campeon);
+  state.tournaments.unshift(g);
+  saveHistory();
+  state.current = null; persistActive();
+  state.viewing = g; state.fromHistory = false;
+  go('results');
+}
+
+function resultsText(t) {
+  const lines = [`🏁 ${t.nombre} — Campeón: ${t.campeon || 'N/A'}`];
+  resultsRows(t).forEach(r => {
+    const out = r.retirado !== null && r.retirado !== undefined ? ' (retirado)' : '';
+    lines.push(`${r.pos}. ${r.player} — ${fmt(r.points)} pts (SoS ${fmt(r.sos)})${out}`);
+  });
+  return lines.join('\n');
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fallback */ }
+  try {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+  } catch (e) { return false; }
+}
+
+function importData(text) {
+  let data;
+  try { data = JSON.parse(text); } catch (e) { return alert('El archivo no es un JSON válido.'); }
+  const list = Array.isArray(data) ? data : (data && Array.isArray(data.tournaments) ? data.tournaments : null);
+  if (!list) return alert('No se encontraron torneos en el archivo.');
+  const keyOf = t => (t.nombre || '') + '|' + (t.fecha_inicio || '');
+  const have = new Set(state.tournaments.map(keyOf));
+  let added = 0;
+  list.forEach(t => {
+    if (t && typeof t === 'object' && Array.isArray(t.players) && t.points && !have.has(keyOf(t))) {
+      state.tournaments.push(t); have.add(keyOf(t)); added++;
+    }
+  });
+  state.tournaments.sort((a, b) => String(b.fecha_inicio || '').localeCompare(String(a.fecha_inicio || '')));
+  saveHistory();
+  let extra = '';
+  if (!Array.isArray(data) && validGame(data.active) && !state.current) {
+    data.active.dropped = data.active.dropped || {};
+    state.current = data.active; persistActive(); extra = ' y el torneo en curso';
+  }
+  render();
+  toast(`Importados ${added} torneo(s)${extra}.`);
+}
+
+// ---------------------------------------------------------------------------
+// Eventos
+// ---------------------------------------------------------------------------
+document.addEventListener('click', async e => {
+  const navBtn = e.target.closest('[data-nav]');
+  if (navBtn) {
+    const v = navBtn.dataset.nav;
+    return go(v === 'game' ? (state.current ? 'game' : 'new') : v);
+  }
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+  switch (act) {
+    case 'shuffle': {
+      const list = readPlayersInput();
+      if (list.length) { $('#f-players').value = shuffle(list).join('\n'); state.draft.players = $('#f-players').value; }
+      break;
+    }
+    case 'start': startTournament(); break;
+    case 'submit': submitRound(); break;
+    case 'drop': openDrop(); break;
+    case 'drop-confirm': confirmDrop(); break;
+    case 'close-sheet': closeSheet(); break;
+    case 'abandon':
+      if (confirm('¿Seguro que querés abandonar el torneo en curso?\nSe perderá y no quedará en el historial.')) {
+        state.current = null; persistActive(); go('new');
+      }
+      break;
+    case 'top4': state.current.inFinals = true; persistActive(); render(); break;
+    case 'back-standings': state.current.inFinals = false; persistActive(); render(); break;
+    case 'finalize': {
+      const g = state.current;
+      finish(orderedPlayers(activePlayers(g), g.points, g.playedWith)[0]);
+      break;
+    }
+    case 'champion': finish(el.dataset.name); break;
+    case 'view-results': state.viewing = state.tournaments[+el.dataset.i]; state.fromHistory = true; go('results'); break;
+    case 'del-history':
+      if (confirm('¿Deseas eliminar este torneo del historial?')) {
+        state.tournaments.splice(+el.dataset.i, 1); saveHistory(); render();
+      }
+      break;
+    case 'to-history': go('history'); break;
+    case 'to-new': go('new'); break;
+    case 'copy': toast(await copyText(resultsText(state.viewing)) ? 'Tabla copiada al portapapeles' : 'No se pudo copiar'); break;
+    case 'export-hist': download('commander_tournaments.json', JSON.stringify(state.tournaments, null, 2)); break;
+    case 'export-all': download('commander_respaldo.json', JSON.stringify({ tournaments: state.tournaments, active: state.current }, null, 2)); break;
+    case 'import': $('#fileInput').click(); break;
+  }
+});
+
+// Guarda lo que se va escribiendo en el formulario de "nuevo torneo"
+function onDraft(e) {
+  const el = e.target.closest('[data-draft]'); if (!el) return;
+  const k = el.dataset.draft;
+  if (k === 'top4') state.draft.top4 = el.checked;
+  else if (k === 'rounds') state.draft.rounds = parseInt(el.value, 10);
+  else state.draft[k] = el.value;
+}
+document.addEventListener('input', onDraft);
+document.addEventListener('change', onDraft);
+
+$('#fileInput').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => importData(String(reader.result));
+  reader.readAsText(f);
+  e.target.value = '';
+});
+
+render();
+</script>
+</body>
+</html>
